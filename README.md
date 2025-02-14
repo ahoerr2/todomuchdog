@@ -1,1 +1,2 @@
-# A todo list app I am writing to learn go
+# Todomuchdog
+A todo list app I am writing to learn go
