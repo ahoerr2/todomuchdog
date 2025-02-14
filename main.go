@@ -3,13 +3,19 @@ package main
 import (
 	"bufio"
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 )
 
+type Task struct {
+	Description string
+	Completed   bool
+}
+
 func main() {
-	tasks := make([]string, 0, 20)
+	tasks := make([]Task, 0, 20)
 
 	fmt.Println("Please print what you want to do today (Leave blank to finish)")
 
@@ -26,15 +32,24 @@ func main() {
 			break
 		}
 
-		tasks = append(tasks, line)
+		tasks = append(tasks, Task{line, false})
 	}
 
 	fmt.Println("\nTask View: ")
-	for _, task := range tasks {
-		fmt.Println("[ ] ", task)
+
+	printCheckmark := func(task Task) string {
+		if task.Completed {
+			return "[x]"
+		}
+		return "[ ]"
 	}
 
-	create_tasks_csv(tasks)
+	for _, task := range tasks {
+		fmt.Printf("%s %s\n", printCheckmark(task), task.Description)
+	}
+
+	// TODO: Reformat the json system to instead take in tasks as they go and clear them
+	create_tasks_json(tasks)
 }
 
 func todo_usr_input(current_task_num int) (string, error) {
@@ -53,7 +68,7 @@ func todo_usr_input(current_task_num int) (string, error) {
 func create_tasks_csv(task_list []string) error {
 	file, err := os.Create("tasks.csv")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	defer file.Close()
@@ -72,6 +87,20 @@ func create_tasks_csv(task_list []string) error {
 		if err := csv_stdin.Write(task_tuple); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func create_tasks_json(task_list []Task) error {
+	file, err := os.Create("tasks.json")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	if err := json.NewEncoder(file).Encode(task_list); err != nil {
+		return err
 	}
 
 	return nil
