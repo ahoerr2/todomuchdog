@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -63,33 +62,6 @@ func todo_usr_input(current_task_num int) (string, error) {
 	}
 
 	return line, nil
-}
-
-func create_tasks_csv(task_list []string) error {
-	file, err := os.Create("tasks.csv")
-	if err != nil {
-		return err
-	}
-
-	defer file.Close()
-
-	csv_stdin := csv.NewWriter(file)
-
-	defer csv_stdin.Flush()
-
-	header := []string{"Task_Desc", "Completed"}
-	if err := csv_stdin.Write(header); err != nil {
-		return err
-	}
-
-	for _, task := range task_list {
-		task_tuple := []string{task, "N"}
-		if err := csv_stdin.Write(task_tuple); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func create_tasks_json(task_list []Task) error {
