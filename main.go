@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"strings"
 )
@@ -14,11 +16,14 @@ type Task struct {
 }
 
 func main() {
-	tasks := make([]Task, 0, 20)
-
-	fmt.Println("Please print what you want to do today (Leave blank to finish)")
+	tasks, err := read_tasks_json()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	current_task_num := func() int { return len(tasks) + 1 }
+
+	fmt.Printf("Please print what you want to do today (Leave blank to finish) (Current Tasks: %d)\n", len(tasks))
 
 	for {
 		line, err := todo_usr_input(current_task_num())
@@ -48,7 +53,7 @@ func main() {
 	}
 
 	// TODO: Reformat the json system to instead take in tasks as they go and clear them
-	create_tasks_json(tasks)
+	update_tasks_json(tasks)
 }
 
 func todo_usr_input(current_task_num int) (string, error) {
@@ -64,8 +69,30 @@ func todo_usr_input(current_task_num int) (string, error) {
 	return line, nil
 }
 
-func create_tasks_json(task_list []Task) error {
-	file, err := os.Create("tasks.json")
+func read_tasks_json() ([]Task, error) {
+	file, err := retrieve_tasks_file(os.O_CREATE | os.O_RDONLY)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var task_list []Task
+
+	err = json.NewDecoder(file).Decode(&task_list)
+
+	if err == io.EOF {
+		return make([]Task, 0, 20), nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return task_list, err
+}
+
+func update_tasks_json(task_list []Task) error {
+	file, err := retrieve_tasks_file(os.O_TRUNC | os.O_RDWR)
 	if err != nil {
 		return err
 	}
@@ -76,4 +103,13 @@ func create_tasks_json(task_list []Task) error {
 	}
 
 	return nil
+}
+
+func retrieve_tasks_file(flag int) (*os.File, error) {
+	file, err := os.OpenFile("tasks.json", flag, 0644)
+	if err != nil {
+		return nil, err
+	}
+
+	return file, nil
 }
